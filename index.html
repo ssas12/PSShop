@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#111827">
+<title>إدارة محل البلايستيشن</title>
+<style>
+:root{--bg:#f3f5f9;--card:#fff;--ink:#172033;--muted:#64748b;--green:#0f9d70;--red:#d94848;--blue:#3157d5;--line:#e2e8f0}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif}
+header{background:#111827;color:white;padding:20px 16px 22px;border-radius:0 0 22px 22px}
+header h1{font-size:23px;margin:0 0 6px}header p{margin:0;color:#cbd5e1;font-size:14px}
+main{max-width:850px;margin:auto;padding:14px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:0 0 14px}
+.stat,.panel,.device{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:13px}
+.stat span{display:block;color:var(--muted);font-size:12px}.stat strong{font-size:21px;display:block;margin-top:5px}
+.panel{margin-bottom:14px}.panel h2{font-size:17px;margin:0 0 12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input,select{min-width:0;padding:11px;border:1px solid #cbd5e1;border-radius:10px;font:inherit;background:white}
+input[type=number]{width:100px}
+button{border:0;border-radius:10px;padding:10px 13px;font:inherit;font-weight:650;cursor:pointer;background:#e8edf7;color:#172033}
+button.primary{background:var(--blue);color:white}button.good{background:#d9f7e9;color:#086447}button.danger{background:#fee2e2;color:#991b1b}button.dark{background:#273449;color:white}
+.small{font-size:12px;color:var(--muted);line-height:1.7}.devices{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:10px}
+.device{padding:14px}.device.active{border-color:#f59e0b;box-shadow:0 0 0 1px #f59e0b inset}
+.device h3{margin:0;font-size:17px}.tag{font-size:11px;padding:4px 8px;border-radius:20px;background:#e8edf7;color:#334155}.tag.busy{background:#fff0c2;color:#8a5800}
+.time{font-size:29px;font-weight:800;letter-spacing:1px;margin:12px 0 2px;direction:ltr;text-align:right}.sub{font-size:12px;color:var(--muted);min-height:20px}
+.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}.actions button{flex:1;min-width:68px;font-size:13px}
+hr{border:0;border-top:1px solid var(--line);margin:13px 0}.empty{color:var(--muted);text-align:center;padding:24px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:12px}
+@media(max-width:420px){.stats{gap:6px}.stat{padding:10px}.stat strong{font-size:18px}.row>*{flex:1}.row button{flex:1}}
+</style>
+</head>
+<body>
+<header><h1>🎮 إدارة محل البلايستيشن</h1><p>إدارة الأجهزة والوقت والحسابات من هاتفك</p></header>
+<main>
+<section class="stats">
+ <div class="stat"><span>عدد الأجهزة</span><strong id="count">0</strong></div>
+ <div class="stat"><span>أجهزة تعمل الآن</span><strong id="busy">0</strong></div>
+ <div class="stat"><span>دخل الجلسات المسجلة</span><strong id="income">0</strong></div>
+</section>
+<section class="panel">
+<h2>إضافة جهاز</h2>
+<div class="row">
+ <input id="deviceName" placeholder="اسم الجهاز (مثال: جهاز 7)" aria-label="اسم الجهاز">
+ <select id="deviceType" aria-label="نوع الجهاز"><option value="normal">وقت عادي</option><option value="match">مباراة (6 + 7 دقائق)</option></select>
+ <button class="primary" onclick="addDevice()">＋ إضافة</button>
+</div>
+<p class="small">يمكنك إضافة أي عدد تحتاجه. الجهازان 1 و5 مُعدّان افتراضيًا للمباريات، ويمكن اختيار وضع المباراة لأجهزة أخرى أيضًا.</p>
+</section>
+<section class="panel">
+<h2>سعر اللعب</h2>
+<div class="row"><label for="rate">السعر لكل ساعة:</label><input id="rate" type="number" min="0" step="any" value="1000" onchange="saveRate()"><span class="small">عدّل السعر حسب عملة المحل.</span></div>
+</section>
+<section class="panel">
+<div class="row" style="justify-content:space-between"><h2 style="margin:0">الأجهزة</h2><button onclick="render()">↻ تحديث العرض</button></div>
+<div id="devices" class="devices" style="margin-top:12px"></div>
+</section>
+<section class="panel">
+<h2>ملاحظات مهمة</h2>
+<p class="small">• وضع المباراة: تنبيه بعد 6 دقائق لنهاية الشوط الأول، ثم تنبيه آخر بعد 7 دقائق لنهاية المباراة (الإجمالي 13 دقيقة).<br>• العداد يعمل ما دام المتصفح مفتوحًا، لكن بعض هواتف أندرويد قد تؤخر الصوت أو الاهتزاز عند قفل الشاشة أو تقييد المتصفح في الخلفية. للحصول على تنبيه موثوق، أبقِ الصفحة مفتوحة واسمح بالصوت والاهتزاز.<br>• البيانات محفوظة على هذا الهاتف والمتصفح. لا تمسح بيانات المتصفح إذا أردت الاحتفاظ بها.</p>
+</section>
+</main><footer>نسخة أولية تعمل محليًا على هذا الهاتف</footer>
+<script>
+const KEY='ps_shop_manager_v1';
+let devices=[], income=0, rate=1000, audioCtx=null;
+function load(){try{let d=JSON.parse(localStorage.getItem(KEY)||'null');if(d){devices=d.devices||[];income=d.income||0;rate=d.rate??1000;}else{devices=[makeDevice('جهاز 1','match'),makeDevice('جهاز 2','normal'),makeDevice('جهاز 3','normal'),makeDevice('جهاز 4','normal'),makeDevice('جهاز 5','match'),makeDevice('جهاز 6','normal')];save();}}catch(e){devices=[]}document.getElementById('rate').value=rate;render();}
+function makeDevice(name,type){return {id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,type,running:false,start:0,elapsed:0,stage:0,sessionStart:0};}
+function save(){localStorage.setItem(KEY,JSON.stringify({devices,income,rate}));}
+function saveRate(){rate=Math.max(0,Number(document.getElementById('rate').value)||0);save();render();}
+function addDevice(){let name=document.getElementById('deviceName').value.trim();if(!name){name='جهاز '+(devices.length+1)}let type=document.getElementById('deviceType').value;if((name==='جهاز 1'||name==='جهاز 5')&&type==='normal')type='match';devices.push(makeDevice(name,type));document.getElementById('deviceName').value='';save();render();}
+function elapsed(d){return d.elapsed+(d.running?Math.max(0,Math.floor((Date.now()-d.start)/1000)):0)}
+function fmt(sec){sec=Math.max(0,Math.floor(sec));return String(Math.floor(sec/3600)).padStart(2,'0')+':'+String(Math.floor(sec%3600/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
+function money(n){return Math.round(n).toLocaleString('ar')} 
+function render(){document.getElementById('count').textContent=devices.length;document.getElementById('busy').textContent=devices.filter(d=>d.running).length;document.getElementById('income').textContent=money(income);let root=document.getElementById('devices');if(!devices.length){root.innerHTML='<div class="empty">لا توجد أجهزة. أضف جهازًا من الأعلى.</div>';return}
+root.innerHTML=devices.map(d=>{let e=elapsed(d), match=d.type==='match', total=match?780:0, remain=Math.max(0,total-e), label=d.running?'يعمل الآن':'متوقف';if(match&&d.running&&e>=360&&d.stage===0){d.stage=1;alarm('انتهى الشوط الأول للجهاز '+d.name)}if(match&&d.running&&e>=780){d.running=false;d.elapsed=780;d.stage=2;alarm('انتهت المباراة للجهاز '+d.name);save();label='انتهت المباراة'}
+let shown=match?(d.running||d.elapsed?fmt(remain):'00:13:00'):fmt(e);
+let sub=match?(d.stage===0?'مدة الشوط الأول 6 دقائق':d.stage===1?'الشوط الثاني: 7 دقائق':d.stage===2?'انتهت المباراة':'مباراة مدتها 13 دقيقة'):'الوقت المحتسب: '+fmt(e);
+let cost=match?Math.ceil(Math.min(e,780)/60*rate/60):Math.ceil(e/60*rate/60);
+return `<article class="device ${d.running?'active':''}"><div class="row" style="justify-content:space-between"><h3>${esc(d.name)}</h3><span class="tag ${d.running?'busy':''}">${label}</span></div><div class="sub">${match?'⚽ وضع المباراة':'🎮 وقت عادي'}</div><div class="time">${shown}</div><div class="sub">${sub}</div><div class="sub">التكلفة التقديرية: ${money(cost)}</div><div class="actions">${!d.running?`<button class="good" onclick="start('${d.id}')">${match&&d.stage===2?'مباراة جديدة':'▶ تشغيل'}</button>`:`<button class="dark" onclick="pause('${d.id}')">Ⅱ إيقاف مؤقت</button>`}<button onclick="finish('${d.id}')">إنهاء وحساب</button><button class="danger" onclick="removeDevice('${d.id}')">حذف</button></div></article>`}).join('');save();}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function start(id){let d=devices.find(x=>x.id===id);if(!d)return;if(d.type==='match'&&d.stage===2){d.elapsed=0;d.stage=0;}d.start=Date.now();d.running=true;save();render();alarm('بدأ العداد للجهاز '+d.name,false);}
+function pause(id){let d=devices.find(x=>x.id===id);if(!d)return;d.elapsed=elapsed(d);d.running=false;save();render();}
+function finish(id){let d=devices.find(x=>x.id===id);if(!d)return;let e=elapsed(d);d.running=false;d.elapsed=e;let seconds=d.type==='match'?Math.min(e,780):e;let cost=Math.ceil(seconds*rate/3600);income+=cost;alert('تم إنهاء '+d.name+'\\nالمدة: '+fmt(e)+'\\nالتكلفة: '+money(cost));d.elapsed=0;d.stage=0;save();render();}
+function removeDevice(id){let d=devices.find(x=>x.id===id);if(!d)return;if(confirm('هل تريد حذف '+d.name+'؟')){devices=devices.filter(x=>x.id!==id);save();render();}}
+function alarm(msg,notify=true){try{if(navigator.vibrate)navigator.vibrate([300,150,300]);audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();[0,.35,.7].forEach(t=>{let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;g.gain.setValueAtTime(.001,audioCtx.currentTime+t);g.gain.exponentialRampToValueAtTime(.25,audioCtx.currentTime+t+.03);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+t+.22);o.start(audioCtx.currentTime+t);o.stop(audioCtx.currentTime+t+.23);});}catch(e){}if(notify)alert('🔔 '+msg);}
+setInterval(()=>{if(devices.some(d=>d.running))render();},500);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)render()});
+load();
+</script>
+</body></html>
